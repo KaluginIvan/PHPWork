@@ -1,0 +1,34 @@
+create table users(
+	id int(10) unsigned NOT NULL AUTO_INCREMENT, 
+	name varchar(255) NOT NULL, 
+	login varchar(255) NOT NULL, 
+	password varchar(255) NOT NULL, 
+	PRIMARY KEY(id)
+)ENGINE=innoDB DEFAULT CHARSET=utf8;
+
+create table album(
+	id int(10) unsigned NOT NULL AUTO_INCREMENT, 
+	title varchar(255) NOT NULL, 
+	user_id int(10) unsigned NOT NULL, 
+	PRIMARY KEY(id)
+)ENGINE=innoDB DEFAULT CHARSET=utf8;
+
+create table photo(
+	id int(10) unsigned NOT NULL AUTO_INCREMENT, 
+	title varchar(255) NOT NULL, 
+	user_id int(10) unsigned NOT NULL, 
+	flag BOOLEAN, PRIMARY KEY(id)
+)ENGINE=innoDB DEFAULT CHARSET=utf8;
+
+create table album_photo(
+	album_id int(10) unsigned NOT NULL AUTO_INCREMENT, 
+	photo_id int(10) unsigned NOT NULL, 
+	PRIMARY KEY(album_id,photo_id)
+)ENGINE=innoDB DEFAULT CHARSET=utf8;
+
+create table friends(
+	user_sender int(10) unsigned NOT NULL, 
+	user_receiver int(10) unsigned NOT NULL, 
+	confirm BOOLEAN, 
+	PRIMARY KEY(user_sender,user_receiver)
+)ENGINE=innoDB DEFAULT CHARSET=utf8;
