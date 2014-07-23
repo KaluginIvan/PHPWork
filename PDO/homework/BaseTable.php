@@ -11,12 +11,13 @@ class BaseTable implements iDbConnectable
     protected $relationKey;
     protected $primaryKey;
 
+    public $relationArray;
     public $attributes;
 
 
     public function __construct()
     {
-        $this->database = new PDO('mysql:host=localhost;dbname=myDB','root','123456');
+        $this->database = new PDO('mysql:host=localhost;dbname=myDB','test','123456');
 
         $query = $this->database->prepare("SHOW KEYS FROM ".$this->tableName." WHERE Key_name = 'PRIMARY'");
 
@@ -34,8 +35,8 @@ class BaseTable implements iDbConnectable
 
     public function findByPk($pk)
     {
-        $query = $this->database->prepare("SELECT * FROM `".$this->tableName."` WHERE `".$this->primaryKey."`='".$pk."'");
-
+        $query = $this->database->prepare("SELECT * FROM `".$this->tableName."`
+                                            WHERE `".$this->primaryKey."`='".$pk."'");
         $query->execute();
 
         $data = $query->fetch(PDO::FETCH_ASSOC);
@@ -45,17 +46,18 @@ class BaseTable implements iDbConnectable
         else
             throw new Exception("There is no row with pk = " . $pk);
 
-        return $this;
+        return clone $this;
     }
 
     public function save()
     {
+        //get attributes keys
         $keys = array_keys($this->attributes);
 
         if(!isset($this->attributes['id']))
         {
-            $query = $this->database->prepare("INSERT INTO `".$this->tableName."` (`".implode($keys,"`,`")."`) VALUES('".implode($this->attributes,"','")."')");
-
+            $query = $this->database->prepare("INSERT INTO `".$this->tableName."` (`".implode($keys,"`,`")."`)
+                                                VALUES('".implode($this->attributes,"','")."')");
             $query->execute();
 
             $this->attributes['id'] = $this->database->lastInsertId();
@@ -75,13 +77,9 @@ class BaseTable implements iDbConnectable
 
             $sql .= "WHERE `".$this->primaryKey."`='".$this->attributes[$this->primaryKey]."'";
 
-            var_dump($sql);
-
             $query = $this->database->prepare($sql);
 
             $query->execute();
-
-            echo "\n";
         }
     }
 
@@ -106,16 +104,42 @@ class BaseTable implements iDbConnectable
 
             return $objects;
         }
-        else
+        else if($with === $this->relationTable)
         {
-            $query = $this->database->prepare("SELECT ".$this->relationTable.".".$this->relation->primaryKey." FROM ".$this->tableName." INNER JOIN ".$this->relationTable." ON ".."");
-            var_dump($query);
+            //Construct hard SQL query
+            $query = $this->database->prepare("SELECT ".$this->tableName.".".$this->primaryKey.",".$with.".".$this->relation->primaryKey.
+                                                " FROM ".$this->tableName." INNER JOIN ".$with.
+                                                " ON ".$this->tableName.".".$this->primaryKey."=".$with.
+                                                ".".$this->relationKey." WHERE ".$this->tableName.".".$attribute."='".$value."'
+                                                ORDER BY ".$this->tableName.".".$this->primaryKey."");
+            $query->execute();
+
+            $data = $query->fetchAll();
+
+            $objects = array();
+
+            $currentID = "";
+            $rowCount = -1;
+            $relationCount = 0;
+
+            //Construct array of relation objects
+            foreach($data as $i =>$row)
+            {
+                if($currentID !== $data[$i][0])
+                {
+                    $currentID = $data[$i][0];
+                    $rowCount++;
+                    $objects[$rowCount] = $this->findByPk($currentID);
+                    $relationCount = 0;
+                }
+
+                $objects[$rowCount]->relationArray[$relationCount] = $this->relation->findByPk($data[$i][1]);
+                $relationCount++;
+            }
+
+            return $objects;
         }
-        /*$query = $this->database->prepare("SELECT users.id, album.id FROM users INNER JOIN album ON users.id = album.user_id");
-        $query->execute();
-
-        $data = $query->fetchAll();
-
-        var_dump($data);*/
+        else
+            throw new Exception('Not related to the table');
     }
 }
