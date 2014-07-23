@@ -3,10 +3,9 @@
 interface iDbConnectable {
 
     /**
-     * @param Array $attributes
      * @return iDbConnectable
      */
-    public function __construct($attributes = array());
+    public function __construct();
 
     /**
      *

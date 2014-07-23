@@ -2,12 +2,6 @@
 
 require_once("User.php");
 
-$user = new BaseTable();
+$user = new User('users');
 
-$myUser = $user->findByPk(20);
-
-$myUser->name = "changedName";
-$myUser->login = "changedLogin";
-$myUser->password = "changedPassword";
-
-$myUser->save();
+$newUsers = $user->where('name','user',true);
